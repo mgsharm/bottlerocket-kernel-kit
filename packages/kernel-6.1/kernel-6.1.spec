@@ -709,10 +709,12 @@ install -p -m 0644 %{S:302} %{buildroot}%{_cross_bootconfigdir}/05-metal.conf
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_shmem_helper.ko.*
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/tiny/simpledrm.ko.*
 %if "%{_cross_arch}" == "x86_64"
+%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko.*
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_buddy.ko.*
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_ttm_helper.ko.*
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/display/drm_display_helper.ko.*
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/i915/i915.ko.*
+%{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/gpu-sched.ko.*
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/ttm/ttm.ko.*
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/vmwgfx/vmwgfx.ko.*
 %endif
