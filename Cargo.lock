@@ -10,6 +10,7 @@ dependencies = [
  "kernel-6_1",
  "kernel-6_12",
  "kmod-6_1-nvidia-r570",
+ "kmod-6_12-amdgpu-7",
  "kmod-6_12-nvidia-r570",
  "kmod-6_12-nvidia-r580",
  "libkcapi",
@@ -43,6 +44,13 @@ name = "kmod-6_1-nvidia-r570"
 version = "0.1.0"
 dependencies = [
  "kernel-6_1",
+]
+
+[[package]]
+name = "kmod-6_12-amdgpu-7"
+version = "0.1.0"
+dependencies = [
+ "kernel-6_12",
 ]
 
 [[package]]
