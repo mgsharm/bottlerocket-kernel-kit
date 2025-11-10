@@ -8,7 +8,7 @@
 %global __strip /usr/bin/true
 
 Name: %{_cross_os}linux-firmware
-Version: 20230625
+Version: 20251021
 Release: 1%{?dist}
 Summary: Firmware files used by the Linux kernel
 # The following list of SPDX identifiers was constructed with help of scancode
@@ -23,26 +23,12 @@ Summary: Firmware files used by the Linux kernel
 License: GPL-1.0-or-later AND GPL-2.0-or-later AND BSD-Source-Code AND LicenseRef-scancode-chelsio-linux-firmware AND LicenseRef-scancode-qlogic-firmware AND LicenseRef-scancode-intel AND LicenseRef-scancode-proprietary-license AND LicenseRef-scancode-free-unknown
 URL: https://www.kernel.org/
 
-Source0: https://www.kernel.org/pub/linux/kernel/firmware/linux-firmware-%{version}.tar.xz
-Source1: https://www.kernel.org/pub/linux/kernel/firmware/linux-firmware-%{version}.tar.sign
-Source2: gpgkey-4CDE8575E547BF835FE15807A31B6BD72486CFD6.asc
-
-Patch0001: 0001-linux-firmware-snd-remove-firmware-for-snd-audio-dev.patch
-Patch0002: 0002-linux-firmware-video-Remove-firmware-for-video-broad.patch
-Patch0003: 0003-linux-firmware-bt-wifi-Remove-firmware-for-Bluetooth.patch
-Patch0004: 0004-linux-firmware-scsi-Remove-firmware-for-SCSI-devices.patch
-Patch0005: 0005-linux-firmware-usb-remove-firmware-for-USB-Serial-PC.patch
-Patch0006: 0006-linux-firmware-ethernet-Remove-firmware-for-ethernet.patch
-Patch0007: 0007-linux-firmware-Remove-firmware-for-Accelarator-devic.patch
-Patch0008: 0008-linux-firmware-gpu-Remove-firmware-for-GPU-devices.patch
-Patch0009: 0009-linux-firmware-various-Remove-firmware-for-various-d.patch
-Patch0010: 0010-linux-firmware-amd-ucode-Remove-amd-microcode.patch
+Source0: https://gitlab.com/kernel-firmware/linux-firmware/-/archive/%{version}/linux-firmware-%{version}.tar.gz
 
 %description
 %{summary}.
 
 %prep
-%{gpgverify} --data=<(xzcat %{S:0}) --signature=%{S:1} --keyring=%{S:2}
 %autosetup -n linux-firmware-%{version} -p1
 
 %build
@@ -53,7 +39,8 @@ mkdir -p %{buildroot}/%{fwdir}/updates
 
 # Use zstd compression for firmware files to reduce size on disk. This relies on
 # kernel support through FW_LOADER_COMPRESS (and FW_LOADER_COMPRESS_ZSTD for kernels >=5.19)
-make DESTDIR=%{buildroot}/ FIRMWAREDIR=%{fwdir} install-zst
+install -d %{buildroot}/%{fwdir}
+./copy-firmware.sh --zstd --ignore-duplicates %{buildroot}/%{fwdir}
 
 %files
 %dir %{fwdir}

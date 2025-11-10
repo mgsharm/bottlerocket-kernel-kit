@@ -1,13 +1,17 @@
+%global kernel_major 6.12
+%global kernel_sources %{_cross_usrsrc}/kernels/%{kernel_major}
+%global _cross_kver %{kernel_major}.53
+%global _cross_kmoddir %{_cross_libdir}/modules/%{_cross_kver}
+
 Name: %{_cross_os}kmod-6.12-amdgpu-7
-Version: 30.10.2
+Version: 30.10
 Release: 1%{?dist}
 Summary: AMD GPU drivers for the 6.12 kernel
-# We use these licences because we only ship our own software in the main package,
-# each subpackage includes the LICENSE file provided by the Licenses.toml file
-License: Apache-2.0 OR MIT  #TODO: Validate license
+License: Apache-2.0 OR MIT
 URL: https://www.amd.com/
 
 Source0: https://repo.radeon.com/amdgpu/30.10.2/el/10/main/x86_64/amdgpu-dkms-6.14.14-2226257.el10.noarch.rpm
+Source103: amdgpu-modules-load.conf
 
 BuildRequires: %{_cross_os}kernel-6.12-devel
 
@@ -59,53 +63,8 @@ HDCP_EOF
 # Modify the amdkcl Makefile to include HDCP stubs
 echo 'amdkcl-y += kcl_hdcp_stubs.o' >> amd/amdkcl/Makefile
 
-# Create DKMS configuration
-mkdir -p amd/dkms/config
-cat > amd/dkms/config/config.h << 'CONFIG_EOF'
-/* config.h - Static configuration for Bottlerocket */
-#define PACKAGE_NAME amdgpu-dkms
-#define PACKAGE_VERSION 30.10.2
-#define HAVE_DMA_RESV_SEQ_BUG 1
-#define HAVE_RESERVATION_WW_CLASS_BUG 1
-#define HAVE_AMDKCL_FLAGS_TAKE_PATH 1
-#define HAVE_KVREALLOC_3ARG 1
-#define HAVE_AMDKCL_HMM_MIRROR_ENABLED 1
-/* Disable HDCP features - symbols not available in Bottlerocket kernel */
-#define HAVE_DRM_CONNECTOR_ATTACH_CONTENT_PROTECTION_PROPERTY 0
-#define HAVE_DRM_HDMI_INFOFRAME_SET_HDR_METADATA 0
-#define HAVE_DRM_HDCP_UPDATE_CONTENT_PROTECTION 0
-/* Additional kernel compatibility defines */
-#define HAVE_DRM_DISPLAY_HDCP_HELPER 0
-CONFIG_EOF
-
-mkdir -p amd/dkms
-cat > amd/dkms/dkms-config.mk << 'DKMS_EOF'
-export OS_NAME=bottlerocket
-export OS_VERSION=1.0
-subdir-ccflags-y += -DOS_NAME_BOTTLEROCKET
-subdir-ccflags-y += -DOS_VERSION_MAJOR=1
-subdir-ccflags-y += -DOS_VERSION_MINOR=0
-subdir-ccflags-y += -DDRM_VER=6 -DDRM_PATCH=12 -DDRM_SUB=0
-export CONFIG_HSA_AMD=y
-export CONFIG_DRM_AMDGPU_CIK=y
-export CONFIG_DRM_AMDGPU_SI=y
-export CONFIG_DRM_AMDGPU_USERPTR=y
-export CONFIG_DRM_AMD_DC=y
-subdir-ccflags-y += -DCONFIG_HSA_AMD
-subdir-ccflags-y += -DCONFIG_DRM_AMDGPU_CIK
-subdir-ccflags-y += -DCONFIG_DRM_AMDGPU_SI
-subdir-ccflags-y += -DCONFIG_DRM_AMDGPU_USERPTR
-subdir-ccflags-y += -DCONFIG_DRM_AMD_DC
-# Disable HDCP support - not available in Bottlerocket kernel
-export CONFIG_DRM_AMD_DC_HDCP=n
-subdir-ccflags-y += -DCONFIG_DRM_AMD_DC_HDCP=n
-subdir-ccflags-y += -DCONFIG_DRM_HDCP=n
-# Prevent linking against HDCP symbols
-subdir-ccflags-y += -DDISABLE_HDCP_SUPPORT
-DKMS_EOF
-
-# Run configure to set up kernel detection
-KERNELVER=6.12.53 amd/dkms/configure --with-linux=%{_cross_usrsrc}/kernels/6.12
+# Configure DKMS
+KERNELVER=%{_cross_kver} amd/dkms/configure --with-linux=%{kernel_sources}
 
 popd
 
@@ -118,9 +77,34 @@ make modules   KERNELVER=6.12.53   kernel_build_dir=%{_cross_usrsrc}/kernels/6.1
 popd
 
 %install
-mkdir -p %{buildroot}%{_cross_libdir}/modules/%{_cross_kver}
-install -p -m 644 amdgpu/amd/amdgpu/amdgpu.ko %{buildroot}%{_cross_libdir}/modules/%{_cross_kver}/
+# Install AMD GPU kernel modules to correct location
+install -d %{buildroot}%{_cross_kmoddir}/extra
+install -p -m 644 amdgpu/amd/amdkcl/amdkcl.ko %{buildroot}%{_cross_kmoddir}/extra/
+install -p -m 644 amdgpu/ttm/amdttm.ko %{buildroot}%{_cross_kmoddir}/extra/
+install -p -m 644 amdgpu/amddrm_ttm_helper.ko %{buildroot}%{_cross_kmoddir}/extra/
+install -p -m 644 amdgpu/amddrm_buddy.ko %{buildroot}%{_cross_kmoddir}/extra/
+install -p -m 644 amdgpu/amddrm_exec.ko %{buildroot}%{_cross_kmoddir}/extra/
+install -p -m 644 amdgpu/scheduler/amd-sched.ko %{buildroot}%{_cross_kmoddir}/extra/
+install -p -m 644 amdgpu/amd/amdxcp/amdxcp.ko %{buildroot}%{_cross_kmoddir}/extra/
+install -p -m 644 amdgpu/amd/amdgpu/amdgpu.ko %{buildroot}%{_cross_kmoddir}/extra/
+
+# Install modules-load.d configuration for automatic module loading
+install -d %{buildroot}%{_cross_libdir}/modules-load.d
+install -m 0644 %{S:103} %{buildroot}%{_cross_libdir}/modules-load.d/amdgpu.conf
+
+# Create attribution.txt file
+install -d %{buildroot}%{_cross_licensedir}/kmod-6.12-amdgpu-7
+echo "AMD GPU DKMS drivers version %{version}-%{release}" > %{buildroot}%{_cross_licensedir}/kmod-6.12-amdgpu-7/attribution.txt
+echo "Source: %{url}" >> %{buildroot}%{_cross_licensedir}/kmod-6.12-amdgpu-7/attribution.txt
 
 %files
 %{_cross_licensedir}/kmod-6.12-amdgpu-7/attribution.txt
-%{_cross_libdir}/modules/%{_cross_kver}/amdgpu.ko
+%{_cross_kmoddir}/extra/amdkcl.ko
+%{_cross_kmoddir}/extra/amdttm.ko
+%{_cross_kmoddir}/extra/amddrm_ttm_helper.ko
+%{_cross_kmoddir}/extra/amddrm_buddy.ko
+%{_cross_kmoddir}/extra/amddrm_exec.ko
+%{_cross_kmoddir}/extra/amd-sched.ko
+%{_cross_kmoddir}/extra/amdxcp.ko
+%{_cross_kmoddir}/extra/amdgpu.ko
+%{_cross_libdir}/modules-load.d/amdgpu.conf
