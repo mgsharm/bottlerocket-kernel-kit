@@ -10,10 +10,12 @@ dependencies = [
  "kernel-6_1",
  "kernel-6_12",
  "kmod-6_1-nvidia-r570",
+ "kmod-6_12-amdgpu",
  "kmod-6_12-nvidia-r570",
  "kmod-6_12-nvidia-r580",
  "libkcapi",
  "linux-firmware",
+ "linux-firmware-amd",
  "microcode",
  "nvidia-migmanager",
  "nvlsm",
@@ -46,6 +48,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kmod-6_12-amdgpu"
+version = "0.1.0"
+dependencies = [
+ "kernel-6_12",
+]
+
+[[package]]
 name = "kmod-6_12-nvidia-r570"
 version = "0.1.0"
 dependencies = [
@@ -65,6 +74,10 @@ version = "0.1.0"
 
 [[package]]
 name = "linux-firmware"
+version = "0.1.0"
+
+[[package]]
+name = "linux-firmware-amd"
 version = "0.1.0"
 
 [[package]]
