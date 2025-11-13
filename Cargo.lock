@@ -15,6 +15,7 @@ dependencies = [
  "kmod-6_12-nvidia-r580",
  "libkcapi",
  "linux-firmware",
+ "linux-firmware-amd",
  "microcode",
  "nvidia-migmanager",
  "nvlsm",
@@ -73,6 +74,10 @@ version = "0.1.0"
 
 [[package]]
 name = "linux-firmware"
+version = "0.1.0"
+
+[[package]]
+name = "linux-firmware-amd"
 version = "0.1.0"
 
 [[package]]

@@ -12,6 +12,7 @@ members = [
     "packages/nvidia-migmanager",
     "packages/nvlsm",
     "packages/linux-firmware",
+    "packages/linux-firmware-amd",
     "packages/microcode",
     "packages/libkcapi",
     "packages/shim",
