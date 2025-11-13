@@ -25,3 +25,6 @@ CONFIG_VMWARE_PVSCSI=m
 # Enable HDCP and HDMI helpers for AMD GPU drivers
 CONFIG_DRM_DISPLAY_HDCP_HELPER=y
 CONFIG_DRM_DISPLAY_HDMI_HELPER=y
+
+# Disable built-in AMD GPU driver to use DKMS version
+# CONFIG_DRM_AMDGPU is not set

@@ -732,12 +732,6 @@ install -p -m 0644 %{S:301} %{buildroot}%{_cross_bootconfigdir}/05-vmware.conf
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/display/drm_display_helper.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/ttm/ttm.%{_ko}
 
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdxcp/amdxcp.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_buddy.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_exec.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/gpu-sched.%{_ko}
-
 %if "%{_cross_arch}" == "x86_64"
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/vmwgfx/vmwgfx.%{_ko}
 %endif
