@@ -3,21 +3,26 @@ From: Martin Harriman <mharrimn@amazon.com>
 Date: Sun, 30 Mar 2025 22:36:38 +0000
 Subject: [PATCH] Select prerequisites for gpu drivers
 
+Add DRM_DISPLAY_HDCP_HELPER and DRM_DISPLAY_HDMI_HELPER symbols
+for AMD GPU driver support.
+
+Signed-off-by: Martin Harriman <mharrimn@amazon.com>
 ---
- drivers/gpu/drm/tiny/Kconfig | 6 ++++++
- 1 file changed, 6 insertions(+)
+ drivers/gpu/drm/tiny/Kconfig | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
 diff --git a/drivers/gpu/drm/tiny/Kconfig b/drivers/gpu/drm/tiny/Kconfig
 index f6889f649..98b597e13 100644
 --- a/drivers/gpu/drm/tiny/Kconfig
 +++ b/drivers/gpu/drm/tiny/Kconfig
-@@ -85,6 +85,12 @@ config DRM_SIMPLEDRM
+@@ -85,6 +85,13 @@ config DRM_SIMPLEDRM
  	select APERTURE_HELPERS
  	select DRM_GEM_SHMEM_HELPER
  	select DRM_KMS_HELPER
 +	select DRM_DISPLAY_DP_HELPER
 +	select DRM_DISPLAY_HELPER
-+	select DRM_KMS_HELPER
++	select DRM_DISPLAY_HDCP_HELPER
++	select DRM_DISPLAY_HDMI_HELPER
 +	select DRM_SUBALLOC_HELPER
 +	select DRM_TTM
 +	select DRM_TTM_HELPER
