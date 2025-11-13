@@ -1,6 +1,6 @@
 %global kernel_major 6.12
 %global kernel_sources %{_cross_usrsrc}/kernels/%{kernel_major}
-%global _cross_kver %{kernel_major}.53
+%global _cross_kver %{kernel_major}.55
 %global _cross_kmoddir %{_cross_libdir}/modules/%{_cross_kver}
 %global _ko ko
 
@@ -39,7 +39,7 @@ popd
 pushd amdgpu
 
 # Build using the DKMS Makefile with static configuration
-make modules   KERNELVER=6.12.53   kernel_build_dir=%{_cross_usrsrc}/kernels/6.12   CC=%{_cross_target}-gcc   ARCH=%{_cross_karch}   CROSS_COMPILE=%{_cross_target}-   EXTRA_CFLAGS=-DPACKAGE_VERSION=\\\"%{version}\\\"
+make modules   KERNELVER=%{_cross_kver}   kernel_build_dir=%{_cross_usrsrc}/kernels/6.12   CC=%{_cross_target}-gcc   ARCH=%{_cross_karch}   CROSS_COMPILE=%{_cross_target}-   EXTRA_CFLAGS=-DPACKAGE_VERSION=\\\"%{version}\\\"
 
 popd
 
