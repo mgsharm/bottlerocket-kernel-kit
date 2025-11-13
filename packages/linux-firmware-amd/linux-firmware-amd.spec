@@ -36,15 +36,8 @@ mkdir -p %{buildroot}/%{fwdir}/updates
 install -d %{buildroot}/%{fwdir}
 ./copy-firmware.sh --zstd --ignore-duplicates %{buildroot}/%{fwdir}
 
-# Remove non-AMD firmware files to keep package minimal
-find %{buildroot}/%{fwdir} -mindepth 1 -maxdepth 1 ! -name 'amdgpu' -exec rm -rf {} +
-
-# Install LICENSE file
-install -d %{buildroot}%{_cross_licensedir}/%{name}
-install -p -m 0644 LICENSE.amdgpu %{buildroot}%{_cross_licensedir}/%{name}/
-
 %files
 %dir %{fwdir}
-%{fwdir}/amdgpu/*
-%license LICENSE.amdgpu
+%{fwdir}/*
+%license LICENCE.* LICENSE.* GPL* WHENCE
 %{_cross_attribution_file}
