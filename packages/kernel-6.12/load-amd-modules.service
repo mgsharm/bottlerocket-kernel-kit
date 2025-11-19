@@ -1,0 +1,20 @@
+[Unit]
+Description=Load AMD GPU modules
+After=local-fs.target
+Requires=local-fs.target
+# Disable manual restarts to prevent loading kernel modules
+# that weren't linked by the running system
+RefuseManualStart=true
+RefuseManualStop=true
+
+[Service]
+Type=oneshot
+# Only run if AMD GPU hardware is detected
+ExecCondition=/usr/bin/ghostdog amd-gpu-present
+# Verify KFD interface was created successfully
+ExecStart=/usr/bin/test -e /sys/class/kfd/kfd
+RemainAfterExit=true
+StandardError=journal+console
+
+[Install] 
+RequiredBy=drivers.target

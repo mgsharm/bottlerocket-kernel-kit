@@ -45,6 +45,7 @@ Source221: neuron-inf1.toml
 Source222: neuron-latest.toml
 Source223: load-neuron-inf1-modules.service
 Source224: load-neuron-latest-modules.service
+Source225: load-amd-modules.service
 
 # Bootconfig snippets to adjust the default kernel command line for the platform.
 Source300: bootconfig-aws.conf
@@ -376,6 +377,9 @@ done
 
 install -p -m 644 %{_builddir}/amdgpu/scheduler/amd-sched.%{_ko} %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/
 install -p -m 644 %{_builddir}/amdgpu/amd/amdxcp/amdxcp.%{_ko} %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdxcp/
+# Install AMD GPU module loading service
+install -d %{buildroot}%{_cross_unitdir}
+install -p -m 0644 %{S:225} %{buildroot}%{_cross_unitdir}
 %endif
 
 install -d %{buildroot}/boot
@@ -1570,6 +1574,7 @@ install -p -m 0644 %{S:301} %{buildroot}%{_cross_bootconfigdir}/05-vmware.conf
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_buddy.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_exec.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/gpu-sched.%{_ko}
+%{_cross_unitdir}/load-amd-modules.service
 %endif
 
 %changelog
