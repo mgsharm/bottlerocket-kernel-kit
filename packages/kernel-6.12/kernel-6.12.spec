@@ -334,15 +334,18 @@ make -C tools/bpf/bpftool bootstrap
 %if "%{_cross_arch}" == "x86_64"
 pushd %{_builddir}/amdgpu
 # Configure DKMS driver
-KERNELVER=%{version} amd/dkms/configure --with-linux=%{_builddir}/linux-%{version}
+pushd amd/dkms
+%cross_configure \
+  KERNELVER="%{version}" \
+  ARCH="%{_cross_karch}" \
+  --with-linux=%{_builddir}/linux-%{version} \
+  %{nil}
+popd
 # Build using the AMD Makefile system
-make modules \
+%{kmake} \
   KERNELVER=%{version} \
   kernel_build_dir=%{_builddir}/linux-%{version} \
-  CC=%{_cross_target}-gcc \
-  ARCH=%{_cross_karch} \
-  CROSS_COMPILE=%{_cross_target}- \
-  EXTRA_CFLAGS=-DPACKAGE_VERSION=\\\"%{version}\\\"
+  modules
 popd
 %endif
 
