@@ -2,7 +2,6 @@
 %global __strip /bin/true
 
 %global kmajor 6.12
-%global _cross_kver %{version}
 
 Name: %{_cross_os}kernel-%{kmajor}
 Version: 6.12.55
@@ -19,8 +18,6 @@ Source2: https://yum.repos.neuron.amazonaws.com/aws-neuronx-dkms-2.21.37.0.noarc
 Source3: https://yum.repos.neuron.amazonaws.com/aws-neuronx-dkms-2.24.7.0.noarch.rpm
 Source4: gpgkey-00FA2C1079260870A76D2C285749CAD8646D9185.asc
 Source5: https://efa-installer.amazonaws.com/aws-efa-installer-1.44.0.tar.gz
-# AMD GPU DKMS driver for x86_64
-Source6: https://repo.radeon.com/amdgpu/30.10.2/el/10/main/x86_64/amdgpu-dkms-6.14.14-2226257.el10.noarch.rpm
 
 # Custom Bottlerocket kernel configurations.
 Source100: config-bottlerocket
@@ -45,7 +42,6 @@ Source221: neuron-inf1.toml
 Source222: neuron-latest.toml
 Source223: load-neuron-inf1-modules.service
 Source224: load-neuron-latest-modules.service
-Source225: load-amd-modules.service
 
 # Bootconfig snippets to adjust the default kernel command line for the platform.
 Source300: bootconfig-aws.conf
@@ -70,9 +66,8 @@ Patch1006: 1006-Select-prerequisites-for-gpu-drivers.patch
 Patch1007: 1007-strscpy-write-destination-buffer-only-once.patch
 # Disable incomplete measurement into PCR 9 on aarch64.
 Patch1008: 1008-efi-libstub-don-t-measure-kernel-command-line-into-P.patch
-# AMD DKMS patch - disable configure script test for drm_get_panel_min_brightness_quirk
-# Function exists but lacks EXPORT_SYMBOL, causing undefined symbol errors in out-of-tree modules
-Source2000: 2000-amd-dkms-Disable-configure-drm_get_panel_min_brightness_quirk.patch
+# Select backlight for AMG GPU driver
+Patch1009: 1009-drm-amd-display-Add-support-for-minimum-backlight-qu.patch
 
 BuildRequires: bc
 BuildRequires: elfutils-devel
@@ -110,9 +105,6 @@ Requires: (%{name}-bootconfig-vmware if %{_cross_os}variant-platform(vmware))
 # Pull in platform-dependent modules.
 %if "%{_cross_arch}" == "x86_64"
 Requires: (%{name}-modules-neuron if (%{_cross_os}variant-platform(aws) without (%{_cross_os}variant-flavor(nvidia) or %{_cross_os}variant-flavor(nvidia-fips))))
-
-# Pull in AMD GPU modules for amd flavor
-Requires: (%{name}-modules-amd if %{_cross_os}variant-flavor(amd))
 %endif
 
 # Pull in FIPS-related files if needed.
@@ -155,15 +147,6 @@ Summary: mkfs configurations for the XFS filesystem
 %{summary}.
 
 %if "%{_cross_arch}" == "x86_64"
-%package modules-amd
-Summary: AMD GPU DKMS kernel modules for the Linux kernel
-Requires: %{name}
-Requires: %{_cross_os}linux-firmware-amd
-Requires: %{_cross_os}variant-flavor(amd)
-
-%description modules-amd
-%{summary}.
-
 %package modules-neuron
 Summary: Modules for the Linux kernel with Neuron hardware
 Requires: %{name}
@@ -275,15 +258,6 @@ find usr/src/ -mindepth 1 -maxdepth 1 -type d -exec mv {} neuron_latest \;
 rm -r usr
 %endif
 
-%if "%{_cross_arch}" == "x86_64"
-# AMD GPU DKMS driver
-rpm2cpio %{S:6} | cpio -idmu "./usr/src/amdgpu-*"
-find usr/src/ -mindepth 1 -maxdepth 1 -type d -exec mv {} amdgpu \;
-rm -r usr
-
-patch -p1 -d amdgpu < %{S:2000}
-%endif
-
 # EFA driver
 tar -xf %{S:5}
 rpm2cpio aws-efa-installer/RPMS/ALINUX2023/%{_cross_arch}/efa-driver/efa-*.%{_cross_arch}.rpm | cpio -idmu './usr/src/efa-*'
@@ -330,25 +304,6 @@ popd
 make -C tools/bpf/bpftool bootstrap
 ./tools/bpf/bpftool/bootstrap/bpftool btf dump file vmlinux format c > vmlinux.h
 
-# Build AMD GPU DKMS driver
-%if "%{_cross_arch}" == "x86_64"
-pushd %{_builddir}/amdgpu
-# Configure DKMS driver
-pushd amd/dkms
-%cross_configure \
-  KERNELVER="%{version}" \
-  ARCH="%{_cross_karch}" \
-  --with-linux=%{_builddir}/linux-%{version} \
-  %{nil}
-popd
-# Build using the AMD Makefile system
-%{kmake} \
-  KERNELVER=%{version} \
-  kernel_build_dir=%{_builddir}/linux-%{version} \
-  modules
-popd
-%endif
-
 %install
 %kmake %{?_smp_mflags} headers_install
 %kmake %{?_smp_mflags} modules_install
@@ -362,28 +317,6 @@ mv %{buildroot}%{_cross_kmoddir}/neuron_2_21/neuron.%{_ko} %{buildroot}%{_cross_
 mv %{buildroot}%{_cross_kmoddir}/neuron_latest/neuron.%{_ko} %{buildroot}%{_cross_libexecdir}/neuron/neuron_latest/
 %endif
 mv %{_builddir}/efa_driver/build/src/efa.%{_ko} %{buildroot}%{_cross_kmoddir}/kernel/drivers/amazon/net/efa/
-
-%if "%{_cross_arch}" == "x86_64"
-# Install AMD GPU DKMS modules to override in-tree modules
-for module in amdkcl amdttm amdgpu; do
-  case $module in
-    amdkcl) src_path="amd/amdkcl/amdkcl.%{_ko}" ;;
-    amdttm) src_path="ttm/amdttm.%{_ko}" ;;
-    amdgpu) src_path="amd/amdgpu/amdgpu.%{_ko}" ;;
-  esac
-  install -p -m 644 %{_builddir}/amdgpu/$src_path %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/
-done
-
-for module in amddrm_ttm_helper amddrm_buddy amddrm_exec; do
-  install -p -m 644 %{_builddir}/amdgpu/${module}.%{_ko} %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/
-done
-
-install -p -m 644 %{_builddir}/amdgpu/scheduler/amd-sched.%{_ko} %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/
-install -p -m 644 %{_builddir}/amdgpu/amd/amdxcp/amdxcp.%{_ko} %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdxcp/
-# Install AMD GPU module loading service
-install -d %{buildroot}%{_cross_unitdir}
-install -p -m 0644 %{S:225} %{buildroot}%{_cross_unitdir}
-%endif
 
 install -d %{buildroot}/boot
 install -T -m 0755 arch/%{_cross_karch}/boot/%{_cross_kimage} %{buildroot}/boot/vmlinuz
@@ -795,11 +728,9 @@ install -p -m 0644 %{S:301} %{buildroot}%{_cross_bootconfigdir}/05-vmware.conf
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/display/drm_display_helper.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/ttm/ttm.%{_ko}
 
-%exclude %{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.%{_ko}
-%exclude %{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdxcp/amdxcp.%{_ko}
-%exclude %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_buddy.%{_ko}
-%exclude %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_exec.%{_ko}
-%exclude %{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/gpu-sched.%{_ko}
+%{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_buddy.%{_ko}
+%{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_exec.%{_ko}
+%{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/gpu-sched.%{_ko}
 
 %if "%{_cross_arch}" == "x86_64"
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/vmwgfx/vmwgfx.%{_ko}
@@ -1562,22 +1493,6 @@ install -p -m 0644 %{S:301} %{buildroot}%{_cross_bootconfigdir}/05-vmware.conf
 %{_cross_unitdir}/load-neuron-latest-modules.service
 %{_cross_factorydir}%{_cross_sysconfdir}/drivers/neuron-inf1.toml
 %{_cross_factorydir}%{_cross_sysconfdir}/drivers/neuron-latest.toml
-%endif
-
-%if "%{_cross_arch}" == "x86_64"
-%files modules-amd
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdkcl.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdttm.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amddrm_ttm_helper.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amddrm_buddy.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amddrm_exec.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/amd-sched.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdxcp/amdxcp.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_buddy.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_exec.%{_ko}
-%{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/gpu-sched.%{_ko}
-%{_cross_unitdir}/load-amd-modules.service
 %endif
 
 %changelog
