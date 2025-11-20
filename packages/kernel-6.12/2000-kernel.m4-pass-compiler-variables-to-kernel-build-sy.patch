@@ -1,0 +1,31 @@
+From 2645cfd18c7c2aa30b8cddd2b59bdcfd858f7c76 Mon Sep 17 00:00:00 2001
+From: Arnaldo Garcia Rincon <agarrcia@amazon.com>
+Date: Thu, 20 Nov 2025 02:43:31 +0000
+Subject: [PATCH] kernel.m4: pass compiler variables to kernel build system
+
+The tests to get the compiler flags default to use the compiler provided
+in the build environment. Force the compiler provided to the configure
+script.
+
+Signed-off-by: Arnaldo Garcia Rincon <agarrcia@amazon.com>
+---
+ amd/dkms/m4/kernel.m4 | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/amd/dkms/m4/kernel.m4 b/amd/dkms/m4/kernel.m4
+index 64178b4..1da7de5 100644
+--- a/amd/dkms/m4/kernel.m4
++++ b/amd/dkms/m4/kernel.m4
+@@ -492,6 +492,9 @@ AC_DEFUN([AC_KERNEL_COMPILE_MODULE_IFELSE], [
+ 			kbuild_cc='CC=clang LD=ld.lld LLVM=1'
+ 		fi
+ 	fi
++	if test -z "$kbuild_cc" && test -n "$CC"; then
++		kbuild_cc="CC=$CC"
++	fi
+ 	test "x$enable_linux_builtin" = xyes && kbuild_src_flag='KBUILD_SRC=' # override KBUILD_SRC
+ 	test "x$enable_linux_builtin" = xyes && kbuild_workaround_flag='sub_make_done=' # override sub_make_done
+ 	AS_IF(
+-- 
+2.50.1
+

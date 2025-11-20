@@ -70,8 +70,8 @@ Patch1006: 1006-Select-prerequisites-for-gpu-drivers.patch
 Patch1007: 1007-strscpy-write-destination-buffer-only-once.patch
 # Disable incomplete measurement into PCR 9 on aarch64.
 Patch1008: 1008-efi-libstub-don-t-measure-kernel-command-line-into-P.patch
-# Select backlight for AMG GPU driver
-Patch1009: 1009-drm-amd-display-Add-support-for-minimum-backlight-qu.patch
+# Pass compiler variables in AMD GPU's tests
+Patch2000: 2000-kernel.m4-pass-compiler-variables-to-kernel-build-sy.patch
 
 BuildRequires: bc
 BuildRequires: elfutils-devel
@@ -280,7 +280,10 @@ find usr/src/ -mindepth 1 -maxdepth 1 -type d -exec mv {} amdgpu \;
 rm -r usr
 pushd amdgpu
 %autopatch -p1 -m 2000 -M 2999
-popd
+pushd amd/dkms
+autoconf -fi
+popd # amd/dkms
+popd # amdgpu
 
 # EFA driver
 tar -xf %{S:5}
