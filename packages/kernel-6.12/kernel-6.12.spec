@@ -363,6 +363,11 @@ mv %{buildroot}%{_cross_kmoddir}/neuron_latest/neuron.%{_ko} %{buildroot}%{_cros
 mv %{_builddir}/efa_driver/build/src/efa.%{_ko} %{buildroot}%{_cross_kmoddir}/kernel/drivers/amazon/net/efa/
 
 # Install AMD GPU DKMS modules to override in-tree modules
+install -d %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/
+install -d %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/
+install -d %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/
+install -d %{buildroot}%{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdxcp/
+
 for module in amdkcl amdttm amdgpu; do
   case $module in
     amdkcl) src_path="amd/amdkcl/amdkcl.%{_ko}" ;;
@@ -1555,7 +1560,6 @@ install -p -m 0644 %{S:301} %{buildroot}%{_cross_bootconfigdir}/05-vmware.conf
 %{_cross_factorydir}%{_cross_sysconfdir}/drivers/neuron-latest.toml
 %endif
 
-%if "%{_cross_arch}" == "x86_64"
 %files modules-amd
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdkcl.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdttm.%{_ko}
@@ -1565,10 +1569,10 @@ install -p -m 0644 %{S:301} %{buildroot}%{_cross_bootconfigdir}/05-vmware.conf
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/amd-sched.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdxcp/amdxcp.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.%{_ko}
+%{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_panel_backlight_quirks.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_buddy.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/drm_exec.%{_ko}
 %{_cross_kmoddir}/kernel/drivers/gpu/drm/scheduler/gpu-sched.%{_ko}
 %{_cross_unitdir}/load-amd-modules.service
-%endif
 
 %changelog
