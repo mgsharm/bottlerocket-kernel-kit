@@ -157,7 +157,7 @@ Summary: mkfs configurations for the XFS filesystem
 %package modules-amd
 Summary: AMD GPU DKMS kernel modules for the Linux kernel
 Requires: %{name}
-Requires: %{_cross_os}linux-firmware-amd
+Requires: %{_cross_os}linux-firmware-amdgpu
 Requires: %{_cross_os}variant-flavor(amd)
 
 %description modules-amd

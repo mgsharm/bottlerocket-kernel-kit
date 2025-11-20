@@ -22,7 +22,6 @@ kmod-6_12-nvidia-r580 = { path = "../../packages/kmod-6.12-nvidia-r580" }
 nvidia-migmanager = { path = "../../packages/nvidia-migmanager" }
 nvlsm = { path = "../../packages/nvlsm" }
 linux-firmware = { path = "../../packages/linux-firmware" }
-linux-firmware-amd = { path = "../../packages/linux-firmware-amd" }
 microcode = { path = "../../packages/microcode" }
 libkcapi = { path = "../../packages/libkcapi" }
 shim = { path = "../../packages/shim" }

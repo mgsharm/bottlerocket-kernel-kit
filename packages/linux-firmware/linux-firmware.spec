@@ -8,7 +8,7 @@
 %global __strip /usr/bin/true
 
 Name: %{_cross_os}linux-firmware
-Version: 20230625
+Version: 20251021
 Release: 1%{?dist}
 Summary: Firmware files used by the Linux kernel
 # The following list of SPDX identifiers was constructed with help of scancode
@@ -27,18 +27,51 @@ Source0: https://www.kernel.org/pub/linux/kernel/firmware/linux-firmware-%{versi
 Source1: https://www.kernel.org/pub/linux/kernel/firmware/linux-firmware-%{version}.tar.sign
 Source2: gpgkey-4CDE8575E547BF835FE15807A31B6BD72486CFD6.asc
 
-Patch0001: 0001-linux-firmware-snd-remove-firmware-for-snd-audio-dev.patch
-Patch0002: 0002-linux-firmware-video-Remove-firmware-for-video-broad.patch
-Patch0003: 0003-linux-firmware-bt-wifi-Remove-firmware-for-Bluetooth.patch
-Patch0004: 0004-linux-firmware-scsi-Remove-firmware-for-SCSI-devices.patch
-Patch0005: 0005-linux-firmware-usb-remove-firmware-for-USB-Serial-PC.patch
-Patch0006: 0006-linux-firmware-ethernet-Remove-firmware-for-ethernet.patch
-Patch0007: 0007-linux-firmware-Remove-firmware-for-Accelarator-devic.patch
-Patch0008: 0008-linux-firmware-gpu-Remove-firmware-for-GPU-devices.patch
-Patch0009: 0009-linux-firmware-various-Remove-firmware-for-various-d.patch
-Patch0010: 0010-linux-firmware-amd-ucode-Remove-amd-microcode.patch
+# Base package pulls in both firmware subpackages unconditionally
+Requires: %{name}-amdgpu
+Requires: %{name}-other
 
 %description
+%{summary}.
+
+%package licenses
+Summary: License files for linux-firmware
+License: GPL-1.0-or-later AND GPL-2.0-or-later AND BSD-Source-Code AND LicenseRef-scancode-chelsio-linux-firmware AND LicenseRef-scancode-qlogic-firmware AND LicenseRef-scancode-intel AND LicenseRef-scancode-proprietary-license AND LicenseRef-scancode-free-unknown
+URL: https://www.kernel.org/
+Requires: %{name}-licenses-amdgpu
+Requires: %{name}-licenses-other
+
+%description licenses
+%{summary}.
+
+%package licenses-amdgpu
+Summary: License files for amdgpu firmware
+License: GPL-1.0-or-later AND GPL-2.0-or-later AND BSD-Source-Code
+URL: https://www.kernel.org/
+
+%description licenses-amdgpu
+%{summary}.
+
+%package licenses-other
+Summary: License files for non-amdgpu firmware
+License: GPL-1.0-or-later AND GPL-2.0-or-later AND BSD-Source-Code AND LicenseRef-scancode-chelsio-linux-firmware AND LicenseRef-scancode-qlogic-firmware AND LicenseRef-scancode-intel AND LicenseRef-scancode-proprietary-license AND LicenseRef-scancode-free-unknown
+URL: https://www.kernel.org/
+
+%description licenses-other
+%{summary}.
+
+%package other
+Summary: Firmware for non-amdgpu hardware
+Requires: %{name}-licenses-other
+
+%description other
+%{summary}.
+
+%package amdgpu
+Summary: Firmware for amdgpu drivers
+Requires: %{name}-licenses-amdgpu
+
+%description amdgpu
 %{summary}.
 
 %prep
@@ -53,10 +86,26 @@ mkdir -p %{buildroot}/%{fwdir}/updates
 
 # Use zstd compression for firmware files to reduce size on disk. This relies on
 # kernel support through FW_LOADER_COMPRESS (and FW_LOADER_COMPRESS_ZSTD for kernels >=5.19)
-make DESTDIR=%{buildroot}/ FIRMWAREDIR=%{fwdir} install-zst
+install -d %{buildroot}/%{fwdir}
+./copy-firmware.sh --zstd --ignore-duplicates %{buildroot}/%{fwdir}
 
 %files
-%dir %{fwdir}
-%{fwdir}/*
-%license LICENCE.* LICENSE.* GPL* WHENCE
+# Base package is empty - just pulls in dependencies
+
+%files licenses
 %{_cross_attribution_file}
+
+%files licenses-amdgpu
+%license LICENSE.amdgpu
+
+%files licenses-other
+%license LICENCE.* LICENSE.* GPL* WHENCE
+
+%files other
+%dir %{fwdir}
+%exclude %{fwdir}/amdgpu
+%{fwdir}/*
+
+%files amdgpu
+%dir %{fwdir}
+%{fwdir}/amdgpu
